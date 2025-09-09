@@ -1,98 +1,53 @@
-```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temperature and Humidity Monitor</title>
-    <!-- Google Fonts for a fresh look -->
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap)" rel="stylesheet">
+    <title>แสดงผลอุณหภูมิและความชื้น</title>
     <style>
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f4f8; /* สีพื้นหลังเริ่มต้น */
+            background-color: #f0f4f8;
             margin: 0;
-            color: #333;
-            transition: background-color 1.5s ease;
-            overflow: hidden; /* ซ่อนส่วนที่เกินขอบเขตเพื่อแอนิเมชัน */
-        }
-        .main-container {
-            display: flex;
             flex-direction: column;
-            gap: 30px;
-            padding: 3em;
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            width: 90%;
-            max-width: 1000px;
+            color: #333;
         }
-        h1 {
-            color: #2c3e50;
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-        .visual-indicators {
+        .container {
             display: flex;
+            gap: 20px;
             justify-content: center;
             align-items: center;
-            gap: 40px;
-            margin-bottom: 20px;
-        }
-        .sun-icon, .cloud-icon {
-            width: 100px;
-            height: 100px;
-            fill: #f39c12;
-            transition: transform 0.5s ease, opacity 0.5s ease;
-        }
-        .data-cards {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            flex-wrap: wrap;
+            padding: 2em;
         }
         .card {
             text-align: center;
             padding: 2.5em 3.5em;
             background-color: #ffffff;
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            flex: 1;
-            min-width: 250px;
+            transition: transform 0.3s ease;
         }
         .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
         .label {
             font-size: 1.2em;
-            font-weight: 600;
+            font-weight: bold;
             color: #7f8c8d;
             margin-bottom: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
         }
         .value {
-            font-size: 4.5em;
-            font-weight: 700;
+            font-size: 4em;
+            font-weight: bold;
             margin: 0;
-            animation: pulse 1s ease-in-out;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
         }
         .unit {
             font-size: 1.5em;
@@ -106,187 +61,76 @@
         #humidity-value {
             color: #3498db;
         }
-        .chart-container {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #fdfdfd;
-            border-radius: 12px;
-            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
         .status-message {
             margin-top: 2em;
             color: #555;
-            font-size: 1.2em;
+            font-size: 1em;
             background-color: #ecf0f1;
             padding: 10px 20px;
             border-radius: 8px;
-            text-align: center;
-        }
-        .emoji {
-            font-size: 1.2em;
         }
     </style>
-    <!-- Chart.js CDN for graphing -->
-    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
 </head>
 <body>
-    <div class="main-container">
-        <h1>Current Weather Conditions ☁️</h1>
-        <div class="visual-indicators">
-            <!-- Sun SVG that scales with temperature -->
-            <svg id="sun-icon" class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-            <!-- Cloud SVG that changes opacity with humidity -->
-            <svg id="cloud-icon" class="cloud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2;">
-                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
-            </svg>
+    <h1>สภาพอากาศปัจจุบัน</h1>
+    <div class="container">
+        <div class="card">
+            <div class="label">อุณหภูมิ</div>
+            <div class="value" id="temperature-value">--</div>
+            <span class="unit">°C</span>
         </div>
-        <div class="data-cards">
-            <div class="card">
-                <div class="label">Temperature <span class="emoji">🌡️</span></div>
-                <div class="value" id="temperature-value">--</div>
-                <span class="unit">°C</span>
-            </div>
-            <div class="card">
-                <div class="label">Humidity <span class="emoji">💧</span></div>
-                <div class="value" id="humidity-value">--</div>
-                <span class="unit">%</span>
-            </div>
-        </div>
-        <div class="chart-container">
-            <canvas id="weatherChart"></canvas>
+        <div class="card">
+            <div class="label">ความชื้น</div>
+            <div class="value" id="humidity-value">--</div>
+            <span class="unit">%</span>
         </div>
     </div>
-    <div class="status-message" id="status-message">Connecting...</div>
+    <div class="status-message" id="status-message">กำลังเชื่อมต่อ...</div>
 
     <script>
-        // Chart setup
-        const ctx = document.getElementById('weatherChart').getContext('2d');
-        const weatherChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Temperature (°C)',
-                        data: [],
-                        borderColor: 'rgb(231, 76, 60)',
-                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                        tension: 0.1,
-                        fill: false
-                    },
-                    {
-                        label: 'Humidity (%)',
-                        data: [],
-                        borderColor: 'rgb(52, 152, 219)',
-                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                        tension: 0.1,
-                        fill: false
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Time'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Value'
-                        },
-                        beginAtZero: false
-                    }
+        // สร้าง WebSocket connection
+        const ws = new WebSocket('ws://localhost:3001');
+
+        // เมื่อเชื่อมต่อสำเร็จ
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            document.getElementById('status-message').textContent = 'เชื่อมต่อสำเร็จแล้ว';
+        };
+
+        // เมื่อได้รับข้อความจาก Backend
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('Received data:', data);
+
+                // ตรวจสอบและอัปเดตค่าอุณหภูมิ
+                if (data.temperature !== undefined) {
+                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
                 }
+
+                // ตรวจสอบและอัปเดตค่าความชื้น
+                if (data.humidity !== undefined) {
+                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+                }
+
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
             }
-        });
+        };
 
-        // Function to map a temperature value to a pastel color
-        function getPastelTemperatureColor(temp) {
-            const minTemp = 0;
-            const maxTemp = 40;
-            const clampedTemp = Math.max(minTemp, Math.min(maxTemp, temp));
-            const hue = 240 - ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 240;
-            return `hsl(${hue}, 80%, 85%)`;
-        }
-        
-        // Function to generate and update data
-        function updateData() {
-            // Simulate random data
-            const temp = Math.random() * (38 - 18) + 18;
-            const humidity = Math.random() * (90 - 40) + 40;
-            
-            const now = new Date();
-            const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
-                            now.getMinutes().toString().padStart(2, '0') + ':' + 
-                            now.getSeconds().toString().padStart(2, '0');
+        // เมื่อเกิดข้อผิดพลาด
+        ws.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+            document.getElementById('status-message').textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        };
 
-            // Update temperature value on the card and chart
-            document.getElementById('temperature-value').textContent = temp.toFixed(1);
-            document.getElementById('temperature-value').classList.add('pulse-animation');
-            setTimeout(() => document.getElementById('temperature-value').classList.remove('pulse-animation'), 500);
-
-            weatherChart.data.labels.push(timeLabel);
-            weatherChart.data.datasets[0].data.push(temp);
-            document.body.style.backgroundColor = getPastelTemperatureColor(temp);
-
-            // Scale the sun icon based on temperature
-            const scale = 0.5 + (temp / 40);
-            document.getElementById('sun-icon').style.transform = `scale(${scale})`;
-
-            // Update dynamic message
-            let message = '';
-            if (temp > 35) {
-                message = 'It\'s a hot one! Stay hydrated. 🥵';
-            } else if (temp > 28) {
-                message = 'The temperature is getting high. 🔥';
-            } else if (temp < 15) {
-                message = 'It\'s quite chilly! 🥶';
-            } else {
-                message = 'Weather conditions are pleasant. 😊';
-            }
-            document.getElementById('status-message').textContent = message;
-
-            // Update humidity value on the card and chart
-            document.getElementById('humidity-value').textContent = humidity.toFixed(1);
-            document.getElementById('humidity-value').classList.add('pulse-animation');
-            setTimeout(() => document.getElementById('humidity-value').classList.remove('pulse-animation'), 500);
-            
-            weatherChart.data.datasets[1].data.push(humidity);
-
-            // Change cloud opacity based on humidity
-            const opacity = humidity / 100;
-            document.getElementById('cloud-icon').style.opacity = opacity;
-
-            // Keep the last 20 data points
-            const maxDataPoints = 20;
-            if (weatherChart.data.labels.length > maxDataPoints) {
-                weatherChart.data.labels.shift();
-                weatherChart.data.datasets[0].data.shift();
-                weatherChart.data.datasets[1].data.shift();
-            }
-
-            // Update the chart
-            weatherChart.update();
-        }
-
-        // Start updating data every 2 seconds
-        setInterval(updateData, 2000);
+        // เมื่อการเชื่อมต่อปิดลง
+        ws.onclose = () => {
+            console.log('Disconnected from WebSocket server');
+            document.getElementById('status-message').textContent = 'การเชื่อมต่อถูกปิด';
+        };
 
     </script>
+
 </body>
 </html>
