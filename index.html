@@ -1,53 +1,82 @@
 ```html
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แสดงผลอุณหภูมิและความชื้น</title>
+    <title>Temperature and Humidity Monitor</title>
+    <!-- Google Fonts for a fresh look -->
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap)" rel="stylesheet">
     <style>
+        @keyframes pulse-once {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Poppins', sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f4f8;
+            background-color: #f0f4f8; /* Default color */
             margin: 0;
-            flex-direction: column;
             color: #333;
+            transition: background-color 1.5s ease; /* Smooth color transition */
         }
-        .container {
+        .main-container {
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            gap: 30px;
+            padding: 3em;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 1000px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .data-cards {
+            display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 2em;
+            gap: 25px;
+            flex-wrap: wrap;
         }
         .card {
             text-align: center;
             padding: 2.5em 3.5em;
             background-color: #ffffff;
-            border-radius: 12px;
+            border-radius: 16px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            flex: 1;
+            min-width: 250px;
         }
         .card:hover {
-            transform: translateY(-5px);
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
+            transform: translateY(-8px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
         }
         .label {
             font-size: 1.2em;
-            font-weight: bold;
+            font-weight: 600;
             color: #7f8c8d;
             margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
         .value {
-            font-size: 4em;
-            font-weight: bold;
+            font-size: 4.5em;
+            font-weight: 700;
             margin: 0;
         }
         .unit {
@@ -62,6 +91,13 @@
         #humidity-value {
             color: #3498db;
         }
+        .chart-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fdfdfd;
+            border-radius: 12px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
         .status-message {
             margin-top: 2em;
             color: #555;
@@ -69,69 +105,163 @@
             background-color: #ecf0f1;
             padding: 10px 20px;
             border-radius: 8px;
+            text-align: center;
+        }
+        .emoji {
+            font-size: 1.2em;
         }
     </style>
+    <!-- Chart.js CDN for graphing -->
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
 </head>
 <body>
-    <h1>สภาพอากาศปัจจุบัน</h1>
-    <div class="container">
-        <div class="card">
-            <div class="label">อุณหภูมิ</div>
-            <div class="value" id="temperature-value">--</div>
-            <span class="unit">°C</span>
+    <div class="main-container">
+        <h1>Current Weather Conditions ☁️</h1>
+        <div class="data-cards">
+            <div class="card">
+                <div class="label">Temperature <span class="emoji">🌡️</span></div>
+                <div class="value" id="temperature-value">--</div>
+                <span class="unit">°C</span>
+            </div>
+            <div class="card">
+                <div class="label">Humidity <span class="emoji">💧</span></div>
+                <div class="value" id="humidity-value">--</div>
+                <span class="unit">%</span>
+            </div>
         </div>
-        <div class="card">
-            <div class="label">ความชื้น</div>
-            <div class="value" id="humidity-value">--</div>
-            <span class="unit">%</span>
+        <div class="chart-container">
+            <canvas id="weatherChart"></canvas>
         </div>
     </div>
-    <div class="status-message" id="status-message">กำลังเชื่อมต่อ...</div>
+    <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // สร้าง WebSocket connection
+        // Initialize the WebSocket connection
         const ws = new WebSocket('ws://localhost:3001');
 
-        // เมื่อเชื่อมต่อสำเร็จ
+        // Chart setup
+        const ctx = document.getElementById('weatherChart').getContext('2d');
+        const weatherChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: [],
+                        borderColor: 'rgb(231, 76, 60)',
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        tension: 0.1,
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: [],
+                        borderColor: 'rgb(52, 152, 219)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        tension: 0.1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Value'
+                        },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+
+        // Function to map a temperature value to a color
+        function getTemperatureColor(temp) {
+            // Define a temperature range
+            const minTemp = 0;
+            const maxTemp = 40;
+
+            // Clamp the temperature to the defined range
+            const clampedTemp = Math.max(minTemp, Math.min(maxTemp, temp));
+
+            // Map the temperature to a hue value (240 = blue, 0 = red)
+            const hue = 240 - ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 240;
+
+            return `hsl(${hue}, 80%, 65%)`;
+        }
+
+        // Event handler for a successful connection
         ws.onopen = () => {
             console.log('Connected to WebSocket server');
-            document.getElementById('status-message').textContent = 'เชื่อมต่อสำเร็จแล้ว';
+            document.getElementById('status-message').textContent = 'Connection successful';
         };
 
-        // เมื่อได้รับข้อความจาก Backend
+        // Event handler for receiving a message from the Backend
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
                 console.log('Received data:', data);
 
-                // ตรวจสอบและอัปเดตค่าอุณหภูมิ
+                const now = new Date();
+                const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
+                                now.getMinutes().toString().padStart(2, '0') + ':' + 
+                                now.getSeconds().toString().padStart(2, '0');
+
+                // Update the temperature value on the card
                 if (data.temperature !== undefined) {
                     document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+                    // Add new data to the chart
+                    weatherChart.data.labels.push(timeLabel);
+                    weatherChart.data.datasets[0].data.push(data.temperature);
+                    
+                    // Update the background color based on temperature
+                    document.body.style.backgroundColor = getTemperatureColor(data.temperature);
                 }
 
-                // ตรวจสอบและอัปเดตค่าความชื้น
+                // Update the humidity value on the card
                 if (data.humidity !== undefined) {
                     document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+                    // Add new data to the chart
+                    weatherChart.data.datasets[1].data.push(data.humidity);
                 }
+
+                // Keep the last 20 data points to prevent the graph from becoming too cluttered
+                const maxDataPoints = 20;
+                if (weatherChart.data.labels.length > maxDataPoints) {
+                    weatherChart.data.labels.shift();
+                    weatherChart.data.datasets[0].data.shift();
+                    weatherChart.data.datasets[1].data.shift();
+                }
+
+                // Update the chart
+                weatherChart.update();
 
             } catch (error) {
                 console.error('Error parsing JSON:', error);
             }
         };
 
-        // เมื่อเกิดข้อผิดพลาด
+        // Event handler for errors
         ws.onerror = (error) => {
             console.error('WebSocket Error:', error);
-            document.getElementById('status-message').textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+            document.getElementById('status-message').textContent = 'An error occurred during connection';
         };
 
-        // เมื่อการเชื่อมต่อปิดลง
+        // Event handler when the connection is closed
         ws.onclose = () => {
             console.log('Disconnected from WebSocket server');
-            document.getElementById('status-message').textContent = 'การเชื่อมต่อถูกปิด';
+            document.getElementById('status-message').textContent = 'Connection closed';
         };
-
     </script>
-
 </body>
 </html>
