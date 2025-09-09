@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,10 +17,11 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f4f8; /* Default color */
+            background-color: #f0f4f8; /* สีพื้นหลังเริ่มต้น */
             margin: 0;
             color: #333;
-            transition: background-color 1.5s ease; /* Smooth color transition */
+            transition: background-color 1.5s ease;
+            overflow: hidden; /* ซ่อนส่วนที่เกินขอบเขตเพื่อแอนิเมชัน */
         }
         .main-container {
             display: flex;
@@ -37,6 +39,19 @@
             text-align: center;
             margin-bottom: 10px;
             font-weight: 700;
+        }
+        .visual-indicators {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 20px;
+        }
+        .sun-icon, .cloud-icon {
+            width: 100px;
+            height: 100px;
+            fill: #f39c12;
+            transition: transform 0.5s ease, opacity 0.5s ease;
         }
         .data-cards {
             display: flex;
@@ -72,6 +87,12 @@
             font-size: 4.5em;
             font-weight: 700;
             margin: 0;
+            animation: pulse 1s ease-in-out;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         .unit {
             font-size: 1.5em;
@@ -95,7 +116,7 @@
         .status-message {
             margin-top: 2em;
             color: #555;
-            font-size: 1em;
+            font-size: 1.2em;
             background-color: #ecf0f1;
             padding: 10px 20px;
             border-radius: 8px;
@@ -111,6 +132,24 @@
 <body>
     <div class="main-container">
         <h1>Current Weather Conditions ☁️</h1>
+        <div class="visual-indicators">
+            <!-- Sun SVG that scales with temperature -->
+            <svg id="sun-icon" class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <!-- Cloud SVG that changes opacity with humidity -->
+            <svg id="cloud-icon" class="cloud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.2;">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+        </div>
         <div class="data-cards">
             <div class="card">
                 <div class="label">Temperature <span class="emoji">🌡️</span></div>
@@ -130,9 +169,6 @@
     <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // Initialize the WebSocket connection
-        const ws = new WebSocket('ws://localhost:3001');
-
         // Chart setup
         const ctx = document.getElementById('weatherChart').getContext('2d');
         const weatherChart = new Chart(ctx, {
@@ -181,82 +217,76 @@
 
         // Function to map a temperature value to a pastel color
         function getPastelTemperatureColor(temp) {
-            // Define a temperature range
             const minTemp = 0;
             const maxTemp = 40;
-
-            // Clamp the temperature to the defined range
             const clampedTemp = Math.max(minTemp, Math.min(maxTemp, temp));
-
-            // Map the temperature to a hue value (240 = light blue, 0 = light red)
             const hue = 240 - ((clampedTemp - minTemp) / (maxTemp - minTemp)) * 240;
-
-            // Use high saturation and lightness for pastel effect
             return `hsl(${hue}, 80%, 85%)`;
         }
+        
+        // Function to generate and update data
+        function updateData() {
+            // Simulate random data
+            const temp = Math.random() * (38 - 18) + 18;
+            const humidity = Math.random() * (90 - 40) + 40;
+            
+            const now = new Date();
+            const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
+                            now.getMinutes().toString().padStart(2, '0') + ':' + 
+                            now.getSeconds().toString().padStart(2, '0');
 
-        // Event handler for a successful connection
-        ws.onopen = () => {
-            console.log('Connected to WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection successful';
-        };
+            // Update temperature value on the card and chart
+            document.getElementById('temperature-value').textContent = temp.toFixed(1);
+            document.getElementById('temperature-value').classList.add('pulse-animation');
+            setTimeout(() => document.getElementById('temperature-value').classList.remove('pulse-animation'), 500);
 
-        // Event handler for receiving a message from the Backend
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Received data:', data);
+            weatherChart.data.labels.push(timeLabel);
+            weatherChart.data.datasets[0].data.push(temp);
+            document.body.style.backgroundColor = getPastelTemperatureColor(temp);
 
-                const now = new Date();
-                const timeLabel = now.getHours().toString().padStart(2, '0') + ':' + 
-                                now.getMinutes().toString().padStart(2, '0') + ':' + 
-                                now.getSeconds().toString().padStart(2, '0');
+            // Scale the sun icon based on temperature
+            const scale = 0.5 + (temp / 40);
+            document.getElementById('sun-icon').style.transform = `scale(${scale})`;
 
-                // Update the temperature value on the card
-                if (data.temperature !== undefined) {
-                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
-                    // Add new data to the chart
-                    weatherChart.data.labels.push(timeLabel);
-                    weatherChart.data.datasets[0].data.push(data.temperature);
-                    
-                    // Update the background color based on temperature
-                    document.body.style.backgroundColor = getPastelTemperatureColor(data.temperature);
-                }
-
-                // Update the humidity value on the card
-                if (data.humidity !== undefined) {
-                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
-                    // Add new data to the chart
-                    weatherChart.data.datasets[1].data.push(data.humidity);
-                }
-
-                // Keep the last 20 data points to prevent the graph from becoming too cluttered
-                const maxDataPoints = 20;
-                if (weatherChart.data.labels.length > maxDataPoints) {
-                    weatherChart.data.labels.shift();
-                    weatherChart.data.datasets[0].data.shift();
-                    weatherChart.data.datasets[1].data.shift();
-                }
-
-                // Update the chart
-                weatherChart.update();
-
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
+            // Update dynamic message
+            let message = '';
+            if (temp > 35) {
+                message = 'It\'s a hot one! Stay hydrated. 🥵';
+            } else if (temp > 28) {
+                message = 'The temperature is getting high. 🔥';
+            } else if (temp < 15) {
+                message = 'It\'s quite chilly! 🥶';
+            } else {
+                message = 'Weather conditions are pleasant. 😊';
             }
-        };
+            document.getElementById('status-message').textContent = message;
 
-        // Event handler for errors
-        ws.onerror = (error) => {
-            console.error('WebSocket Error:', error);
-            document.getElementById('status-message').textContent = 'An error occurred during connection';
-        };
+            // Update humidity value on the card and chart
+            document.getElementById('humidity-value').textContent = humidity.toFixed(1);
+            document.getElementById('humidity-value').classList.add('pulse-animation');
+            setTimeout(() => document.getElementById('humidity-value').classList.remove('pulse-animation'), 500);
+            
+            weatherChart.data.datasets[1].data.push(humidity);
 
-        // Event handler when the connection is closed
-        ws.onclose = () => {
-            console.log('Disconnected from WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection closed';
-        };
+            // Change cloud opacity based on humidity
+            const opacity = humidity / 100;
+            document.getElementById('cloud-icon').style.opacity = opacity;
+
+            // Keep the last 20 data points
+            const maxDataPoints = 20;
+            if (weatherChart.data.labels.length > maxDataPoints) {
+                weatherChart.data.labels.shift();
+                weatherChart.data.datasets[0].data.shift();
+                weatherChart.data.datasets[1].data.shift();
+            }
+
+            // Update the chart
+            weatherChart.update();
+        }
+
+        // Start updating data every 2 seconds
+        setInterval(updateData, 2000);
+
     </script>
 </body>
 </html>
