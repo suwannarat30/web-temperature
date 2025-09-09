@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,10 +17,10 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f4f8; /* สีเริ่มต้น */
+            background-color: #f0f4f8; /* Default color */
             margin: 0;
             color: #333;
-            transition: background-color 1.5s ease; /* เปลี่ยนสีพื้นหลังอย่างนุ่มนวล */
+            transition: background-color 1.5s ease; /* Smooth color transition */
         }
         .main-container {
             display: flex;
@@ -212,27 +213,25 @@
                                 now.getMinutes().toString().padStart(2, '0') + ':' + 
                                 now.getSeconds().toString().padStart(2, '0');
 
-                // Update temperature value on the card and chart
+                // Update the temperature value on the card
                 if (data.temperature !== undefined) {
                     document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+                    // Add new data to the chart
                     weatherChart.data.labels.push(timeLabel);
                     weatherChart.data.datasets[0].data.push(data.temperature);
+                    
                     // Update the background color based on temperature
                     document.body.style.backgroundColor = getPastelTemperatureColor(data.temperature);
-                } else {
-                    console.warn('Temperature data not found in message.');
                 }
 
-                // Update humidity value on the card and chart
+                // Update the humidity value on the card
                 if (data.humidity !== undefined) {
                     document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
                     // Add new data to the chart
                     weatherChart.data.datasets[1].data.push(data.humidity);
-                } else {
-                    console.warn('Humidity data not found in message.');
                 }
 
-                // Keep the last 20 data points
+                // Keep the last 20 data points to prevent the graph from becoming too cluttered
                 const maxDataPoints = 20;
                 if (weatherChart.data.labels.length > maxDataPoints) {
                     weatherChart.data.labels.shift();
