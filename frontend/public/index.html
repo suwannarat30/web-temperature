@@ -1,0 +1,137 @@
+```html
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แสดงผลอุณหภูมิและความชื้น</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f4f8;
+            margin: 0;
+            flex-direction: column;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            padding: 2em;
+        }
+        .card {
+            text-align: center;
+            padding: 2.5em 3.5em;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .label {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .value {
+            font-size: 4em;
+            font-weight: bold;
+            margin: 0;
+        }
+        .unit {
+            font-size: 1.5em;
+            color: #95a5a6;
+            margin-top: -10px;
+            display: block;
+        }
+        #temperature-value {
+            color: #e74c3c;
+        }
+        #humidity-value {
+            color: #3498db;
+        }
+        .status-message {
+            margin-top: 2em;
+            color: #555;
+            font-size: 1em;
+            background-color: #ecf0f1;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>สภาพอากาศปัจจุบัน</h1>
+    <div class="container">
+        <div class="card">
+            <div class="label">อุณหภูมิ</div>
+            <div class="value" id="temperature-value">--</div>
+            <span class="unit">°C</span>
+        </div>
+        <div class="card">
+            <div class="label">ความชื้น</div>
+            <div class="value" id="humidity-value">--</div>
+            <span class="unit">%</span>
+        </div>
+    </div>
+    <div class="status-message" id="status-message">กำลังเชื่อมต่อ...</div>
+
+    <script>
+        // สร้าง WebSocket connection
+        const ws = new WebSocket('ws://localhost:3001');
+
+        // เมื่อเชื่อมต่อสำเร็จ
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            document.getElementById('status-message').textContent = 'เชื่อมต่อสำเร็จแล้ว';
+        };
+
+        // เมื่อได้รับข้อความจาก Backend
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('Received data:', data);
+
+                // ตรวจสอบและอัปเดตค่าอุณหภูมิ
+                if (data.temperature !== undefined) {
+                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+                }
+
+                // ตรวจสอบและอัปเดตค่าความชื้น
+                if (data.humidity !== undefined) {
+                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+                }
+
+            } catch (error) {
+                console.error('Error parsing JSON:', error);
+            }
+        };
+
+        // เมื่อเกิดข้อผิดพลาด
+        ws.onerror = (error) => {
+            console.error('WebSocket Error:', error);
+            document.getElementById('status-message').textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        };
+
+        // เมื่อการเชื่อมต่อปิดลง
+        ws.onclose = () => {
+            console.log('Disconnected from WebSocket server');
+            document.getElementById('status-message').textContent = 'การเชื่อมต่อถูกปิด';
+        };
+
+    </script>
+
+</body>
+</html>
