@@ -10,7 +10,7 @@ const ALLOW_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'https://web-temperature.vercel.app/',   // Vercel frontend ของคุณ
+  'https://web-temperature-993b.vercel.app/',   // Vercel frontend ของคุณ
 ]);
 
 app.use(cors({
