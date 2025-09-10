@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temperature and Humidity Monitor</title>
-    <!-- Google Fonts for a fresh look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -101,49 +100,37 @@
     <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // Create WebSocket connection
-        const ws = new WebSocket('ws://localhost:3001');
+      // URL ของ Backend ที่รันอยู่
+      const BACKEND_BASE = "http://localhost:3000";
 
-        // When connected
-        ws.onopen = () => {
-            console.log('Connected to WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection successful';
-        };
+      // ฟังก์ชันสำหรับอัปเดตค่าใน HTML
+      function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
 
-        // When a message is received from the Backend
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('Received data:', data);
+      // ฟังก์ชันสำหรับดึงข้อมูลจาก Backend
+      async function fetchData() {
+        try {
+          const res = await fetch(`${BACKEND_BASE}/data`);
+          const data = await res.json();
 
-                // Check and update temperature value
-                if (data.temperature !== undefined) {
-                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
-                }
+          if (data.temperature !== null) {
+            setText("temperature-value", data.temperature.toFixed(1));
+          }
+          if (data.humidity !== null) {
+            setText("humidity-value", data.humidity.toFixed(1));
+          }
+          setText("status-message", "Data updated successfully ✅");
+        } catch (err) {
+          console.error("Fetch error:", err);
+          setText("status-message", "Error fetching data ⚠️");
+        }
+      }
 
-                // Check and update humidity value
-                if (data.humidity !== undefined) {
-                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
-                }
-
-            } catch (error) {
-                console.error('Error parsing JSON:', error);
-            }
-        };
-
-        // When an error occurs
-        ws.onerror = (error) => {
-            console.error('WebSocket Error:', error);
-            document.getElementById('status-message').textContent = 'An error occurred during connection';
-        };
-
-        // When the connection is closed
-        ws.onclose = () => {
-            console.log('Disconnected from WebSocket server');
-            document.getElementById('status-message').textContent = 'Connection closed';
-        };
-
+      // เรียกฟังก์ชันครั้งแรกและตั้งเวลาให้ดึงข้อมูลทุกๆ 5 วินาที
+      fetchData();
+      setInterval(fetchData, 5000);
     </script>
-
 </body>
 </html>
