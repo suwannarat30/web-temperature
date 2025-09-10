@@ -30,21 +30,25 @@
         text-shadow: 1px 1px #fff;
     }
 
-    /* Heart bubbles animation */
+    /* Floating bubbles and hearts */
     @keyframes floatUp {
         0% { transform: translateY(0) scale(0.8); opacity: 0.7;}
         50% { transform: translateY(-50px) scale(1); opacity: 1;}
         100% { transform: translateY(-200px) scale(0.5); opacity: 0;}
     }
 
-    .bubble {
+    .bubble, .heart {
         position: absolute;
-        width: 20px;
-        height: 20px;
-        background: #ff9aa2;
         border-radius: 50%;
-        animation: floatUp 4s infinite ease-in;
         opacity: 0.8;
+        animation: floatUp 4s infinite ease-in;
+    }
+
+    .heart {
+        width: 25px;
+        height: 25px;
+        background: linear-gradient(135deg,#ff9aa2,#ffcad4);
+        clip-path: polygon(50% 0%, 61% 14%, 75% 15%, 84% 26%, 88% 39%, 78% 51%, 50% 80%, 22% 51%, 12% 39%, 16% 26%, 25% 15%, 39% 14%);
     }
 
     /* Container */
@@ -58,36 +62,24 @@
         z-index: 1;
     }
 
-    /* Heart-shaped Card */
+    /* Star-shaped card */
     .card {
         position: relative;
-        background: linear-gradient(145deg, #ff9aa2, #ffcad4);
         width: 230px;
-        height: 200px;
+        height: 230px;
+        background: linear-gradient(145deg, #ff9aa2, #ffd1dc);
+        clip-path: polygon(
+            50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%
+        );
         text-align: center;
-        padding-top: 40px;
-        border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.5s ease;
+        padding-top: 60px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-
-    .card::before,
-    .card::after {
-        content: "";
-        position: absolute;
-        width: 110px;
-        height: 110px;
-        background: linear-gradient(135deg, #ff9aa2, #ffcad4);
-        border-radius: 50%;
-        top: -55px;
-    }
-
-    .card::before { left: 0; }
-    .card::after { right: 0; }
 
     .card:hover {
-        transform: translateY(-6px) rotate(-2deg);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        transform: translateY(-6px) rotate(-5deg);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
 
     /* Label */
@@ -104,7 +96,7 @@
 
     @keyframes bounceLabel {
         0% { transform: translateY(0);}
-        50% { transform: translateY(-3px);}
+        50% { transform: translateY(-4px);}
         100% { transform: translateY(0);}
     }
 
@@ -113,14 +105,14 @@
         font-size: 4em;
         font-weight: 700;
         margin: 0;
-        text-shadow: 1px 1px #fff;
+        text-shadow: 2px 2px 2px #fff;
         opacity: 0;
         transition: opacity 0.5s ease, transform 0.3s ease;
     }
 
     .value.show {
         opacity: 1;
-        transform: scale(1.1);
+        transform: scale(1.15);
     }
 
     .unit {
@@ -151,7 +143,7 @@
     /* Responsive */
     @media(max-width:500px){
         .container { flex-direction: column; gap: 15px; }
-        .card { width: 80%; height: 180px; padding-top: 30px;}
+        .card { width: 80%; height: 200px; padding-top: 50px;}
         .value { font-size: 3em; }
     }
 </style>
@@ -174,24 +166,26 @@
 
 <div class="status-message" id="status-message">Connecting...</div>
 
-<!-- Floating hearts -->
+<!-- Floating bubbles and hearts -->
 <script>
-    function createBubble() {
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.style.left = Math.random()*window.innerWidth+'px';
-        bubble.style.animationDuration = 3 + Math.random()*3 + 's';
-        bubble.style.width = bubble.style.height = 15 + Math.random()*15 + 'px';
-        document.body.appendChild(bubble);
-        setTimeout(()=> bubble.remove(), 6000);
+    function createBubbleOrHeart() {
+        const isHeart = Math.random() < 0.5;
+        const div = document.createElement('div');
+        div.className = isHeart ? 'heart' : 'bubble';
+        div.style.left = Math.random() * window.innerWidth + 'px';
+        div.style.width = div.style.height = 10 + Math.random()*20 + 'px';
+        div.style.animationDuration = 3 + Math.random()*3 + 's';
+        document.body.appendChild(div);
+        setTimeout(()=> div.remove(), 6000);
     }
-    setInterval(createBubble, 500);
+    setInterval(createBubbleOrHeart, 400);
 </script>
 
 <script>
     const tempValue = document.getElementById('temperature-value');
     const humValue = document.getElementById('humidity-value');
 
+    // WebSocket เดิม 100%
     const ws = new WebSocket('ws://localhost:3001');
 
     ws.onopen = () => {
