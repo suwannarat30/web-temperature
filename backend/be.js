@@ -41,4 +41,4 @@ app.get('/data', (_req, res) => {
 // Health check
 app.get('/health', (_req, res) => res.send('ok'));
 
-app.listen(PORT, () => console.log(`Backend listening on ${PORT}`));
+app.listen(PORT, () => console.log(`Backend listening on ${PORT}`)); // Health check
