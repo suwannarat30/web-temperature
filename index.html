@@ -7,8 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-    /* Base */
     body {
         font-family: 'Kanit', sans-serif;
         display: flex;
@@ -18,36 +19,18 @@
         min-height: 100vh;
         margin: 0;
         background: linear-gradient(135deg, #ffe6f0, #d0f0ff);
-        overflow: hidden;
+        overflow-x: hidden;
         color: #333;
     }
 
     h1 {
         font-weight: 700;
-        margin-bottom: 2em;
+        margin-bottom: 1.5em;
         color: #e91e63;
         text-align: center;
         text-shadow: 1px 1px #fff;
     }
 
-    /* Heart bubbles animation */
-    @keyframes floatUp {
-        0% { transform: translateY(0) scale(0.8); opacity: 0.7;}
-        50% { transform: translateY(-50px) scale(1); opacity: 1;}
-        100% { transform: translateY(-200px) scale(0.5); opacity: 0;}
-    }
-
-    .bubble {
-        position: absolute;
-        width: 20px;
-        height: 20px;
-        background: #ff9aa2;
-        border-radius: 50%;
-        animation: floatUp 4s infinite ease-in;
-        opacity: 0.8;
-    }
-
-    /* Container */
     .container {
         display: flex;
         flex-wrap: wrap;
@@ -58,7 +41,6 @@
         z-index: 1;
     }
 
-    /* Heart-shaped Card */
     .card {
         position: relative;
         background: linear-gradient(145deg, #ff9aa2, #ffcad4);
@@ -90,7 +72,6 @@
         box-shadow: 0 8px 24px rgba(0,0,0,0.2);
     }
 
-    /* Label */
     .label {
         display: flex;
         justify-content: center;
@@ -108,7 +89,6 @@
         100% { transform: translateY(0);}
     }
 
-    /* Value */
     .value {
         font-size: 4em;
         font-weight: 700;
@@ -130,11 +110,9 @@
         margin-top: -6px;
     }
 
-    /* Colors */
     #temperature-value { color: #ff3b6f; }
     #humidity-value { color: #3be6b1; }
 
-    /* Status */
     .status-message {
         margin-top: 2em;
         background-color: #fff0f5;
@@ -145,10 +123,19 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    /* Emoji */
     .emoji { font-size: 1.3em; }
 
-    /* Responsive */
+    /* Chart container */
+    #chart-container {
+        margin-top: 2em;
+        width: 90%;
+        max-width: 800px;
+        background: rgba(255,255,255,0.6);
+        padding: 20px;
+        border-radius: 20px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
     @media(max-width:500px){
         .container { flex-direction: column; gap: 15px; }
         .card { width: 80%; height: 180px; padding-top: 30px;}
@@ -174,66 +161,104 @@
 
 <div class="status-message" id="status-message">Connecting...</div>
 
-<!-- Floating hearts -->
-<script>
-    function createBubble() {
-        const bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.style.left = Math.random()*window.innerWidth+'px';
-        bubble.style.animationDuration = 3 + Math.random()*3 + 's';
-        bubble.style.width = bubble.style.height = 15 + Math.random()*15 + 'px';
-        document.body.appendChild(bubble);
-        setTimeout(()=> bubble.remove(), 6000);
-    }
-    setInterval(createBubble, 500);
-</script>
+<div id="chart-container">
+    <canvas id="tempChart"></canvas>
+</div>
 
 <script>
-    const tempValue = document.getElementById('temperature-value');
-    const humValue = document.getElementById('humidity-value');
+const tempValue = document.getElementById('temperature-value');
+const humValue = document.getElementById('humidity-value');
 
-    const ws = new WebSocket('ws://localhost:3001');
+let tempHistory = [];
+let timeLabels = [];
 
-    ws.onopen = () => {
-        console.log('Connected to WebSocket server');
-        document.getElementById('status-message').textContent = 'Connection successful';
-    };
-
-    ws.onmessage = (event) => {
-        try {
-            const data = JSON.parse(event.data);
-            console.log('Received data:', data);
-
-            if (data.temperature !== undefined) {
-                tempValue.classList.remove('show');
-                setTimeout(() => {
-                    tempValue.textContent = data.temperature.toFixed(1);
-                    tempValue.classList.add('show');
-                }, 100);
+const ctx = document.getElementById('tempChart').getContext('2d');
+const tempChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: timeLabels,
+        datasets: [{
+            label: 'Temperature (°C)',
+            data: tempHistory,
+            borderColor: '#ff3b6f',
+            backgroundColor: 'rgba(255,59,111,0.2)',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: true },
+        },
+        scales: {
+            x: { 
+                title: { display: true, text: 'Time' },
+                ticks: { color: '#333' }
+            },
+            y: { 
+                title: { display: true, text: '°C' },
+                ticks: { color: '#333' }
             }
-
-            if (data.humidity !== undefined) {
-                humValue.classList.remove('show');
-                setTimeout(() => {
-                    humValue.textContent = data.humidity.toFixed(1);
-                    humValue.classList.add('show');
-                }, 100);
-            }
-
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
         }
-    };
+    }
+});
 
-    ws.onerror = (error) => {
-        console.error('WebSocket Error:', error);
-        document.getElementById('status-message').textContent = 'An error occurred during connection';
-    };
+// WebSocket
+const ws = new WebSocket('ws://localhost:3001');
 
-    ws.onclose = () => {
-        console.log('Disconnected from WebSocket server');
-        document.getElementById('status-message').textContent = 'Connection closed';
-    };
+ws.onopen = () => {
+    console.log('Connected to WebSocket server');
+    document.getElementById('status-message').textContent = 'Connection successful';
+};
+
+ws.onmessage = (event) => {
+    try {
+        const data = JSON.parse(event.data);
+        console.log('Received data:', data);
+
+        if (data.temperature !== undefined) {
+            tempValue.classList.remove('show');
+            setTimeout(() => {
+                tempValue.textContent = data.temperature.toFixed(1);
+                tempValue.classList.add('show');
+            }, 100);
+
+            // Update chart
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+            tempHistory.push(data.temperature.toFixed(1));
+            timeLabels.push(timeStr);
+
+            // Keep last 24 points
+            if(tempHistory.length>24){ tempHistory.shift(); timeLabels.shift(); }
+
+            tempChart.update();
+        }
+
+        if (data.humidity !== undefined) {
+            humValue.classList.remove('show');
+            setTimeout(() => {
+                humValue.textContent = data.humidity.toFixed(1);
+                humValue.classList.add('show');
+            }, 100);
+        }
+
+    } catch (error) {
+        console.error('Error parsing JSON:', error);
+    }
+};
+
+ws.onerror = (error) => {
+    console.error('WebSocket Error:', error);
+    document.getElementById('status-message').textContent = 'An error occurred during connection';
+};
+
+ws.onclose = () => {
+    console.log('Disconnected from WebSocket server');
+    document.getElementById('status-message').textContent = 'Connection closed';
+};
 </script>
 </body>
 </html>
