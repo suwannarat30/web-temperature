@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
     body {
@@ -160,7 +161,8 @@
 <div class="status-message" id="status-message">Connecting...</div>
 
 <div id="chart-container">
-    <canvas id="weatherChart"></canvas>
+    <canvas id="tempChart"></canvas>
+    <canvas id="humChart" style="margin-top:30px;"></canvas>
 </div>
 
 <script>
@@ -171,39 +173,47 @@ let tempHistory = [];
 let humHistory = [];
 let timeLabels = [];
 
-const ctx = document.getElementById('weatherChart').getContext('2d');
+const tempCtx = document.getElementById('tempChart').getContext('2d');
+const humCtx = document.getElementById('humChart').getContext('2d');
 
-const weatherChart = new Chart(ctx, {
+const tempChart = new Chart(tempCtx, {
     type: 'line',
-    data: {
-        labels: timeLabels,
-        datasets: [
-            {
-                label: 'Temperature (°C)',
-                data: tempHistory,
-                borderColor: '#ff3b6f',
-                backgroundColor: 'rgba(255,59,111,0.2)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 3
-            },
-            {
-                label: 'Humidity (%)',
-                data: humHistory,
-                borderColor: '#3be6b1',
-                backgroundColor: 'rgba(59,230,177,0.2)',
-                tension: 0.4,
-                fill: true,
-                pointRadius: 3
-            }
-        ]
-    },
+    data: { labels: timeLabels, datasets: [{
+        label: 'Temperature (°C)',
+        data: tempHistory,
+        borderColor: '#ff3b6f',
+        backgroundColor: 'rgba(255,59,111,0.2)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3
+    }]},
     options: {
         responsive: true,
-        plugins: { legend: { display: true } },
+        plugins: { legend: { display: true }},
         scales: {
             x: { title: { display: true, text: 'Time' }, ticks: { color: '#333' } },
-            y: { title: { display: true, text: 'Value' }, ticks: { color: '#333' } }
+            y: { title: { display: true, text: '°C' }, ticks: { color: '#333' } }
+        }
+    }
+});
+
+const humChart = new Chart(humCtx, {
+    type: 'line',
+    data: { labels: timeLabels, datasets: [{
+        label: 'Humidity (%)',
+        data: humHistory,
+        borderColor: '#3be6b1',
+        backgroundColor: 'rgba(59,230,177,0.2)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3
+    }]},
+    options: {
+        responsive: true,
+        plugins: { legend: { display: true }},
+        scales: {
+            x: { title: { display: true, text: 'Time' }, ticks: { color: '#333' } },
+            y: { title: { display: true, text: '%' }, ticks: { color: '#333' } }
         }
     }
 });
@@ -224,6 +234,7 @@ ws.onmessage = (event) => {
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
 
+        // Temperature
         if (data.temperature !== undefined) {
             tempValue.classList.remove('show');
             setTimeout(() => {
@@ -232,8 +243,12 @@ ws.onmessage = (event) => {
             }, 100);
 
             tempHistory.push(data.temperature.toFixed(1));
+            timeLabels.push(timeStr);
+            if(tempHistory.length>24){ tempHistory.shift(); humHistory.shift(); timeLabels.shift(); }
+            tempChart.update();
         }
 
+        // Humidity
         if (data.humidity !== undefined) {
             humValue.classList.remove('show');
             setTimeout(() => {
@@ -242,17 +257,8 @@ ws.onmessage = (event) => {
             }, 100);
 
             humHistory.push(data.humidity.toFixed(1));
+            humChart.update();
         }
-
-        // Update time labels
-        timeLabels.push(timeStr);
-        if(timeLabels.length>24){
-            timeLabels.shift();
-            tempHistory.shift();
-            humHistory.shift();
-        }
-
-        weatherChart.update();
 
     } catch (error) {
         console.error('Error parsing JSON:', error);
