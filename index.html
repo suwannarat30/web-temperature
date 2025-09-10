@@ -4,95 +4,129 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temperature and Humidity Monitor</title>
-    <!-- Google Fonts for a fresh look -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Reset & Base */
         body {
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Kanit', sans-serif;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f4f8;
+            min-height: 100vh;
             margin: 0;
-            flex-direction: column;
+            background: #f0f7f9;
             color: #333;
         }
+
+        h1 {
+            font-weight: 700;
+            margin-bottom: 1.5em;
+            color: #34495e;
+            text-align: center;
+        }
+
+        /* Container */
         .container {
             display: flex;
+            flex-wrap: wrap;
             gap: 25px;
             justify-content: center;
-            align-items: center;
-            padding: 2.5em;
+            align-items: stretch;
         }
+
+        /* Card */
         .card {
-            text-align: center;
-            padding: 2.5em 3.5em;
             background-color: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 20px;
+            padding: 2em 3em;
+            width: 220px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
         }
+
         .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-6px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
+
         .label {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: #7f8c8d;
-            margin-bottom: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 1.2em;
+            color: #7f8c8d;
+            margin-bottom: 0.8em;
         }
+
         .value {
-            font-size: 4.5em;
+            font-size: 4em;
             font-weight: 700;
             margin: 0;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
+
+        .value.show {
+            opacity: 1;
+        }
+
         .unit {
-            font-size: 1.5em;
+            font-size: 1.3em;
             color: #95a5a6;
-            margin-top: -10px;
             display: block;
+            margin-top: -8px;
         }
+
+        /* Color coding for Temperature and Humidity */
         #temperature-value {
-            color: #e74c3c;
+            color: #ff9aa2; /* pastel pink */
         }
         #humidity-value {
-            color: #3498db;
+            color: #a2d5f2; /* pastel blue */
         }
+
+        /* Status message */
         .status-message {
             margin-top: 2em;
-            color: #555;
-            font-size: 1em;
-            background-color: #ecf0f1;
+            background-color: #dff0ea; /* pastel mint */
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: 12px;
+            font-size: 1em;
+            color: #2c3e50;
         }
-        .emoji {
-            font-size: 1.2em;
+
+        /* Responsive */
+        @media(max-width: 500px){
+            .container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .card {
+                width: 80%;
+                padding: 1.5em 2em;
+            }
+            .value {
+                font-size: 3em;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Current Weather Conditions</h1>
     <div class="container">
-        <div class="card">
+        <div class="card" id="temp-card">
             <div class="label">Temperature <span class="emoji">🌡️</span></div>
             <div class="value" id="temperature-value">--</div>
             <span class="unit">°C</span>
         </div>
-        <div class="card">
+        <div class="card" id="hum-card">
             <div class="label">Humidity <span class="emoji">💧</span></div>
             <div class="value" id="humidity-value">--</div>
             <span class="unit">%</span>
@@ -101,29 +135,34 @@
     <div class="status-message" id="status-message">Connecting...</div>
 
     <script>
-        // Create WebSocket connection
+        const tempValue = document.getElementById('temperature-value');
+        const humValue = document.getElementById('humidity-value');
+
         const ws = new WebSocket('ws://localhost:3001');
 
-        // When connected
         ws.onopen = () => {
             console.log('Connected to WebSocket server');
             document.getElementById('status-message').textContent = 'Connection successful';
         };
 
-        // When a message is received from the Backend
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                console.log('Received data:', data);
 
-                // Check and update temperature value
                 if (data.temperature !== undefined) {
-                    document.getElementById('temperature-value').textContent = data.temperature.toFixed(1);
+                    tempValue.classList.remove('show');
+                    setTimeout(() => {
+                        tempValue.textContent = data.temperature.toFixed(1);
+                        tempValue.classList.add('show');
+                    }, 100);
                 }
 
-                // Check and update humidity value
                 if (data.humidity !== undefined) {
-                    document.getElementById('humidity-value').textContent = data.humidity.toFixed(1);
+                    humValue.classList.remove('show');
+                    setTimeout(() => {
+                        humValue.textContent = data.humidity.toFixed(1);
+                        humValue.classList.add('show');
+                    }, 100);
                 }
 
             } catch (error) {
@@ -131,19 +170,15 @@
             }
         };
 
-        // When an error occurs
         ws.onerror = (error) => {
             console.error('WebSocket Error:', error);
             document.getElementById('status-message').textContent = 'An error occurred during connection';
         };
 
-        // When the connection is closed
         ws.onclose = () => {
             console.log('Disconnected from WebSocket server');
             document.getElementById('status-message').textContent = 'Connection closed';
         };
-
     </script>
-
 </body>
 </html>
