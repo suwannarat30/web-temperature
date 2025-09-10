@@ -1,24 +1,23 @@
-// backend/be.js (Polling version — No WebSocket)
+// backend/be.js  (Polling version — No WebSocket)
 const express = require('express');
 const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// อนุญาตเฉพาะ origin ที่ไว้ใจได้
+// อนุญาตเฉพาะ origin ที่ไว้ใจได้ (แก้เป็นโดเมนจริงของคุณด้วย)
 const ALLOW_ORIGINS = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
-  'http://localhost:4000', // *** เพิ่มบรรทัดนี้ ***
-  'https://dht-11-mkzt.vercel.app', // Vercel frontend ของคุณ
+  'https://web-temperature.vercel.app/',   // Vercel frontend ของคุณ
 ]);
 
 app.use(cors({
   origin: (origin, cb) => cb(null, !origin || ALLOW_ORIGINS.has(origin)),
 }));
 
-app.use(express.json());
+app.use(express.json()); // ไม่ต้อง body-parser แล้ว
 
 // เก็บค่าล่าสุดไว้ในหน่วยความจำ
 let latest = { temperature: null, humidity: null, at: null };
