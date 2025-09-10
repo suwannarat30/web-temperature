@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Reset & Base */
+        /* Base */
         body {
             font-family: 'Kanit', sans-serif;
             display: flex;
@@ -18,18 +18,18 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: #f0f7f9;
+            background: #ffeef2; /* pastel pink background */
             color: #333;
         }
 
         h1 {
             font-weight: 700;
             margin-bottom: 1.5em;
-            color: #34495e;
+            color: #e91e63;
             text-align: center;
+            text-shadow: 1px 1px #fff;
         }
 
-        /* Container */
         .container {
             display: flex;
             flex-wrap: wrap;
@@ -38,19 +38,38 @@
             align-items: stretch;
         }
 
-        /* Card */
+        /* Heart-shaped card */
         .card {
-            background-color: #ffffff;
-            border-radius: 20px;
-            padding: 2em 3em;
+            position: relative;
+            background: #ffccd5; /* pastel pink */
             width: 220px;
+            height: 200px;
             text-align: center;
+            padding-top: 40px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.5s ease;
+        }
+
+        .card::before,
+        .card::after {
+            content: "";
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: #ffccd5;
+            border-radius: 50%;
+            top: -50px;
+        }
+        .card::before {
+            left: 0;
+        }
+        .card::after {
+            right: 0;
         }
 
         .card:hover {
-            transform: translateY(-6px);
+            transform: translateY(-6px) rotate(-2deg);
             box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         }
 
@@ -58,15 +77,14 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             font-weight: 600;
-            font-size: 1.2em;
-            color: #7f8c8d;
-            margin-bottom: 0.8em;
+            font-size: 1.1em;
+            margin-bottom: 0.5em;
         }
 
         .value {
-            font-size: 4em;
+            font-size: 3.8em;
             font-weight: 700;
             margin: 0;
             opacity: 0;
@@ -78,39 +96,44 @@
         }
 
         .unit {
-            font-size: 1.3em;
-            color: #95a5a6;
+            font-size: 1.2em;
+            color: #555;
             display: block;
-            margin-top: -8px;
+            margin-top: -6px;
         }
 
-        /* Color coding for Temperature and Humidity */
         #temperature-value {
-            color: #ff9aa2; /* pastel pink */
-        }
-        #humidity-value {
-            color: #a2d5f2; /* pastel blue */
+            color: #ff6f91; /* pastel red */
         }
 
-        /* Status message */
+        #humidity-value {
+            color: #6fcf97; /* pastel green */
+        }
+
         .status-message {
             margin-top: 2em;
-            background-color: #dff0ea; /* pastel mint */
+            background-color: #fff0f5; /* pastel cartoon style */
             padding: 10px 20px;
             border-radius: 12px;
             font-size: 1em;
-            color: #2c3e50;
+            color: #e91e63;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Emoji */
+        .emoji {
+            font-size: 1.2em;
         }
 
         /* Responsive */
-        @media(max-width: 500px){
+        @media(max-width:500px){
             .container {
                 flex-direction: column;
                 gap: 15px;
             }
             .card {
                 width: 80%;
-                padding: 1.5em 2em;
+                height: 180px;
             }
             .value {
                 font-size: 3em;
@@ -138,17 +161,22 @@
         const tempValue = document.getElementById('temperature-value');
         const humValue = document.getElementById('humidity-value');
 
+        // Create WebSocket connection
         const ws = new WebSocket('ws://localhost:3001');
 
+        // When connected
         ws.onopen = () => {
             console.log('Connected to WebSocket server');
             document.getElementById('status-message').textContent = 'Connection successful';
         };
 
+        // When a message is received from the Backend
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                console.log('Received data:', data);
 
+                // Check and update temperature value
                 if (data.temperature !== undefined) {
                     tempValue.classList.remove('show');
                     setTimeout(() => {
@@ -157,6 +185,7 @@
                     }, 100);
                 }
 
+                // Check and update humidity value
                 if (data.humidity !== undefined) {
                     humValue.classList.remove('show');
                     setTimeout(() => {
@@ -170,11 +199,13 @@
             }
         };
 
+        // When an error occurs
         ws.onerror = (error) => {
             console.error('WebSocket Error:', error);
             document.getElementById('status-message').textContent = 'An error occurred during connection';
         };
 
+        // When the connection is closed
         ws.onclose = () => {
             console.log('Disconnected from WebSocket server');
             document.getElementById('status-message').textContent = 'Connection closed';
